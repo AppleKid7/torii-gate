@@ -6,7 +6,6 @@ val circeVersion = "0.14.3"
 val monocleVersion = "3.1.0"
 val logbackVersion = "1.4.5"
 val zioVersion = "2.0.6"
-val zioHttpVersion = "0.0.4"
 val shardCakeVersion = "2.0.6"
 val zioJsonVersion = "0.4.2"
 val quillVersion = "4.6.0"
@@ -35,7 +34,6 @@ lazy val root = project
       "dev.zio" %% "zio-test-sbt" % zioVersion,
       "dev.zio" %% "zio-streams" % zioVersion,
       "dev.zio" %% "zio-test-junit" % zioVersion,
-      "dev.zio" %% "zio-http" % zioHttpVersion,
       "dev.zio" %% "zio-json" % zioJsonVersion,
       "dev.zio" %% "zio-config" % zioConfigVersion,
       "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
@@ -47,6 +45,13 @@ lazy val root = project
       "com.devsisters" %% "shardcake-storage-redis" % shardCakeVersion,
       "com.devsisters" %% "shardcake-protocol-grpc" % shardCakeVersion,
       "com.devsisters" %% "shardcake-serialization-kryo" % shardCakeVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-zio" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-zio" % tapirVersion,
+      // "com.softwaremill.sttp.client3" %% "core" % sttpVersion,
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % sttpVersion,
       "org.scalameta" %% "munit" % "0.7.29" % Test,
     )
   )

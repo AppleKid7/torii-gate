@@ -6,6 +6,7 @@ import com.torii_gate.config.MatchConfig
 import scala.util.{Failure, Success, Try}
 import zio.{Dequeue, RIO, Task, ZIO}
 import zio.config.*
+import zio.json.*
 
 object MatchBehavior {
   enum MatchMakingError {
@@ -15,6 +16,13 @@ object MatchBehavior {
     case NetworkReadError(message: String)
     case ShardcakeConnectionError(message: String)
     def message: String
+  }
+  object MatchMakingError {
+    given zio.json.JsonEncoder[MatchMakingError] =
+      DeriveJsonEncoder.gen[MatchMakingError]
+
+    given zio.json.JsonDecoder[MatchMakingError] =
+      DeriveJsonDecoder.gen[MatchMakingError]
   }
 
   enum MatchMessage {
