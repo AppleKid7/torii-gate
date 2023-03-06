@@ -29,4 +29,19 @@ package object torii_gate {
         } yield ZEnvironment(commands, pubSub)).toScopedZIO
       }
     }
+
+  // implicit class DebugWrapper[R, E, A](zio: ZIO[R, E, A]) {
+  //   def debugThread: ZIO[R, E, A] =
+  //     zio
+  //       .tap(a => ZIO.succeed(println(s"[${Thread.currentThread().getName()}] $a")))
+  //       .tapErrorCause(cause =>
+  //         ZIO.succeed(println(s"[${Thread.currentThread().getName()}] [FAIL] $cause"))
+  //       )
+  // }
+
+  extension [R, E, A](zlayer: ZLayer[R, E, A])
+    def debugThread: ZLayer[R, E, A] =
+      zlayer
+        .tap(a => ZIO.succeed(println(s"[${Thread.currentThread().getName()}] $a")))
+        .tapErrorCause(cause => ZIO.succeed(println(s"[${Thread.currentThread().getName()}] [FAIL] $cause")))
 }

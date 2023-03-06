@@ -3,24 +3,24 @@ package com.torii_gate
 import com.devsisters.shardcake
 import com.devsisters.shardcake.*
 import com.devsisters.shardcake.interfaces.*
+import com.torii_gate.MatchBehavior.*
+import com.torii_gate.MatchBehavior.MatchMessage.*
+import com.torii_gate.config.*
 import dev.profunktor.redis4cats.RedisCommands
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import java.util.UUID.randomUUID
-import com.torii_gate.MatchBehavior.*
-import com.torii_gate.MatchBehavior.MatchMessage.*
-import com.torii_gate.config.*
 import scala.util.{Failure, Success, Try}
+import sttp.client3.httpclient.zio.*
+import sttp.tapir.*
+import sttp.tapir.generic.auto.*
+import sttp.tapir.json.zio.*
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.interceptor.decodefailure.DefaultDecodeFailureHandler
 import sttp.tapir.server.ziohttp.*
 import sttp.tapir.server.ziohttp.ZioHttpInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import sttp.tapir.*
 import sttp.tapir.ztapir.*
-import sttp.tapir.server.ServerEndpoint
-import sttp.tapir.json.zio.*
-import sttp.tapir.generic.auto.*
-import sttp.client3.httpclient.zio.*
 import zio.*
 import zio.config.*
 import zio.json.*
@@ -108,12 +108,11 @@ object MatchApp extends ZIOAppDefault {
 
   val run = getConfig[AppConfig]
     .flatMap { c =>
-      (register *>
-        zio
-          .http
-          .Server
-          .serve(routes)
-          .flatMap(_ => Console.printLine(s"Server started")) *> ZIO.never)
+      (register *> (zio
+        .http
+        .Server
+        .serve(routes)
+        .flatMap(_ => Console.printLine(s"Server started")) *> ZIO.never))
         .provide(
           zio.http.ServerConfig.live(zio.http.ServerConfig.default.port(c.port)),
           zio.http.Server.live,
@@ -127,8 +126,9 @@ object MatchApp extends ZIOAppDefault {
           ZLayer.succeed(GrpcConfig.default),
           GrpcPods.live,
           config,
-          sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend.layer(),
-          ShardManagerClient.live,
+          // sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend.layer(),
+          // ShardManagerClient.live,
+          ShardManagerClient.liveWithSttp.debugThread,
           MatchConfig.live,
           ShardcakeConfig.live,
           Scope.default

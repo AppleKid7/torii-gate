@@ -19,6 +19,6 @@ object ShardManagerApp extends ZIOAppDefault {
         StorageRedis.live,
         PodsHealth.local, // just ping a pod to see if it's alive
         GrpcPods.live, // use gRPC protocol
-        ShardManager.live // Shard Manager logic
+        ShardManager.live.debugThread // Shard Manager logic
       )
 }
