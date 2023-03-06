@@ -22,16 +22,20 @@ import zio.config.*
 import zio.json.*
 
 object MatchApp extends ZIOAppDefault {
-  val config: ZLayer[Any, SecurityException, shardcake.Config] =
-    ZLayer(
-      System
-        .env("port")
-        .map(
-          _.flatMap(_.toIntOption).fold(shardcake.Config.default)(port =>
-            shardcake.Config.default.copy(shardingPort = port)
-          )
-        )
-    )
+  // val config: ZLayer[Any, SecurityException, shardcake.Config] =
+  //   ZLayer(
+  //     System
+  //       .env("port")
+  //       .map(
+  //         _.flatMap(_.toIntOption).fold(shardcake.Config.default)(port =>
+  //           shardcake.Config.default.copy(shardingPort = port)
+  //         )
+  //       )
+  //   )
+  val config: ZLayer[ShardcakeConfig, SecurityException, shardcake.Config] =
+    ZLayer(getConfig[ShardcakeConfig].map { config =>
+      shardcake.Config.default.copy(shardingPort = config.port)
+    })
 
   val app: Http[Scope & Sharding, MatchMakingError, Request, Response] = Http.collectZIO[Request] {
     case Method.GET -> !! / "text" =>
@@ -94,6 +98,7 @@ object MatchApp extends ZIOAppDefault {
               // Waiting for the server to start then make sure it stays up forever with ZIO.never
               Console.printLine(s"Server started on port ${start.port}") *> ZIO.never,
             )).provide(
+          ShardcakeConfig.live,
           config,
           ServerChannelFactory.auto,
           EventLoopGroup.auto(nThreads),
