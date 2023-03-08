@@ -24,6 +24,10 @@ import sttp.tapir.ztapir.*
 import zio.*
 import zio.config.*
 import zio.json.*
+import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
+import sttp.tapir.swagger.SwaggerUI
+import sttp.apispec.openapi.circe.yaml._
+import sttp.tapir.docs.openapi._
 
 object MatchApp extends ZIOAppDefault {
   val config: ZLayer[ShardcakeConfig, SecurityException, shardcake.Config] =
@@ -49,6 +53,7 @@ object MatchApp extends ZIOAppDefault {
     sttp
       .tapir
       .endpoint
+      .post
       .in("join")
       .out(jsonBody[UserJoinResponse])
       .errorOut(jsonBody[MatchMakingError])
@@ -87,23 +92,25 @@ object MatchApp extends ZIOAppDefault {
     .decodeFailureHandler(myDecodeFailureHandler)
     .options
 
-  // val routes = ZioHttpInterpreter().toHttp(List(joinServerEndpoint) ++ swaggerEndpoints)
-  val routes: http.Http[Sharding, Throwable, http.Request, http.Response] =
-    ZioHttpInterpreter().toHttp(List(joinServerEndpoint))
+  val swaggerEndpoints: List[ZServerEndpoint[Sharding, Any]] = SwaggerInterpreter().fromServerEndpoints(List(joinServerEndpoint), "Matches", "1.0")
+  // val docs = List(joinEndpoint).toOpenAPI("Matches", "1.0")
+  //  val swaggerUIRoute: List[ServerEndpoint[Sharding, Future]] = SwaggerUI[Future](docsAsYaml)
+  // val routes = ZioHttpInterpreter().toHttp[Sharding](List(joinServerEndpoint) ++ swaggerUIRoute)
+  val routes = ZioHttpInterpreter().toHttp[Sharding](List(joinServerEndpoint) ++ swaggerEndpoints)
 
   private val server: URIO[Sharding & http.Server, Nothing] =
     zio
       .http
       .Server
       .serve(
-        routes.catchAll(ex =>
-          zio
-            .http
-            .Http
-            .succeed(
-              zio.http.Response.json(s"""{"failure": "${ex}"}""")
-            )
-        )
+        routes // .catchAll(ex =>
+        //   zio
+        //     .http
+        //     .Http
+        //     .succeed(
+        //       zio.http.Response.json(s"""{"failure": "${ex}"}""")
+        //     )
+        // )
       ) // Setup the Http app
 
   val run = getConfig[AppConfig]

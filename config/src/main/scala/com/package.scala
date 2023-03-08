@@ -1,12 +1,12 @@
 package com
 
 import com.devsisters.shardcake.StorageRedis.Redis
+import com.torii_gate.config.RedisUriConfig
 import dev.profunktor.redis4cats.Redis
 import dev.profunktor.redis4cats.connection.RedisClient
 import dev.profunktor.redis4cats.data.RedisCodec
 import dev.profunktor.redis4cats.effect.Log
 import dev.profunktor.redis4cats.pubsub.PubSub
-import com.torii_gate.config.RedisUriConfig
 import zio.{Task, ZEnvironment, ZIO, ZLayer}
 import zio.config.*
 import zio.interop.catz.*
@@ -23,25 +23,30 @@ package object torii_gate {
 
       getConfig[RedisUriConfig].flatMap { config =>
         (for {
-          client <- RedisClient[Task].from(s"${config.uri}:${config.port}")
+          client <- RedisClient[Task].from(
+            s"${config.uri}${config.username}:${config.password}@${config.host}:${config.port}"
+          )
           commands <- Redis[Task].fromClient(client, RedisCodec.Utf8)
           pubSub <- PubSub.mkPubSubConnection[Task, String, String](client, RedisCodec.Utf8)
         } yield ZEnvironment(commands, pubSub)).toScopedZIO
       }
     }
 
-  // implicit class DebugWrapper[R, E, A](zio: ZIO[R, E, A]) {
-  //   def debugThread: ZIO[R, E, A] =
-  //     zio
-  //       .tap(a => ZIO.succeed(println(s"[${Thread.currentThread().getName()}] $a")))
-  //       .tapErrorCause(cause =>
-  //         ZIO.succeed(println(s"[${Thread.currentThread().getName()}] [FAIL] $cause"))
-  //       )
-  // }
+  extension [R, E, A](zio: ZIO[R, E, A]) {
+    def debugThread: ZIO[R, E, A] =
+      zio
+        .tap(a => ZIO.succeed(println(s"[${Thread.currentThread().getName()}] $a")))
+        .tapErrorCause(cause =>
+          ZIO.succeed(println(s"[${Thread.currentThread().getName()}] [FAIL] $cause"))
+        )
+  }
 
-  extension [R, E, A](zlayer: ZLayer[R, E, A])
+  extension [R, E, A](zlayer: ZLayer[R, E, A]) {
     def debugThread: ZLayer[R, E, A] =
       zlayer
         .tap(a => ZIO.succeed(println(s"[${Thread.currentThread().getName()}] $a")))
-        .tapErrorCause(cause => ZIO.succeed(println(s"[${Thread.currentThread().getName()}] [FAIL] $cause")))
+        .tapErrorCause(cause =>
+          ZIO.succeed(println(s"[${Thread.currentThread().getName()}] [FAIL] $cause"))
+        )
+  }
 }

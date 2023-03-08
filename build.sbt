@@ -1,4 +1,5 @@
 import NativePackagerHelper._
+import sbt.Keys.resourceDirectory
 
 val scala3Version = "3.2.2"
 
@@ -13,9 +14,79 @@ val zioConfigVersion = "3.0.7"
 val tapirVersion = "1.2.6"
 val sttpVersion = "3.8.7"
 
-lazy val root = project
-  .in(file("."))
+
+lazy val coreSettings = Seq(
+  organization := "com.torii-gate",
+  scalaVersion := scala3Version,
+  resourceDirectory in Compile := baseDirectory.value / "src" / "main" / "resources",
+)
+
+
+lazy val manager = project
+  .in(file("manager"))
   .settings(
+    coreSettings,
+    name := "Torii Gate",
+    organization := "com.torii-gate",
+    version := "0.1.0-SNAPSHOT",
+
+    scalaVersion := scala3Version,
+    scalacOptions ++= Seq(
+      "-Xmax-inlines",
+      "64"
+    ),
+
+    libraryDependencies ++= Seq(
+      "io.getquill" %% "quill-jdbc-zio" % quillVersion,
+      "org.postgresql" % "postgresql" % "42.3.1",
+      "com.devsisters" % "shardcake-core_3" % shardCakeVersion,
+      "com.devsisters" %% "shardcake-manager" % shardCakeVersion,
+      "com.devsisters" %% "shardcake-storage-redis" % shardCakeVersion,
+      "com.devsisters" %% "shardcake-protocol-grpc" % shardCakeVersion,
+      "com.devsisters" %% "shardcake-serialization-kryo" % shardCakeVersion,
+      "org.scalameta" %% "munit" % "0.7.29" % Test,
+    )
+  ).dependsOn(config)
+
+lazy val matches = project
+  .in(file("matches"))
+  .settings(
+    coreSettings,
+    name := "Torii Gate",
+    organization := "com.torii-gate",
+    version := "0.1.0-SNAPSHOT",
+
+    scalaVersion := scala3Version,
+    scalacOptions ++= Seq(
+      "-Xmax-inlines",
+      "64"
+    ),
+
+    libraryDependencies ++= Seq(
+      "org.postgresql" % "postgresql" % "42.3.1",
+      "io.getquill" %% "quill-jdbc-zio" % quillVersion,
+      "com.devsisters" % "shardcake-core_3" % shardCakeVersion,
+      "com.devsisters" %% "shardcake-manager" % shardCakeVersion,
+      "com.devsisters" %% "shardcake-protocol-grpc" % shardCakeVersion,
+      "com.devsisters" %% "shardcake-serialization-kryo" % shardCakeVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-zio" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-zio" % tapirVersion,
+      // "com.softwaremill.sttp.client3" %% "core" % sttpVersion,
+      // "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % sttpVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % tapirVersion,
+      "com.softwaremill.sttp.apispec" %% "openapi-circe-yaml" % "0.3.2",
+      "org.scalameta" %% "munit" % "0.7.29" % Test,
+    )
+  ).dependsOn(config)
+
+lazy val config = project
+  .in(file("config"))
+  .settings(
+    coreSettings,
     name := "Torii Gate",
     organization := "com.torii-gate",
     version := "0.1.0-SNAPSHOT",
@@ -38,20 +109,6 @@ lazy val root = project
       "dev.zio" %% "zio-config" % zioConfigVersion,
       "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
       "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
-      "io.getquill" %% "quill-jdbc-zio" % quillVersion,
-      "org.postgresql" % "postgresql" % "42.3.1",
-      "com.devsisters" % "shardcake-core_3" % shardCakeVersion,
-      "com.devsisters" %% "shardcake-manager" % shardCakeVersion,
       "com.devsisters" %% "shardcake-storage-redis" % shardCakeVersion,
-      "com.devsisters" %% "shardcake-protocol-grpc" % shardCakeVersion,
-      "com.devsisters" %% "shardcake-serialization-kryo" % shardCakeVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-zio" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-zio-http-server" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-json-zio" % tapirVersion,
-      // "com.softwaremill.sttp.client3" %% "core" % sttpVersion,
-      "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % sttpVersion,
-      "org.scalameta" %% "munit" % "0.7.29" % Test,
     )
   )
