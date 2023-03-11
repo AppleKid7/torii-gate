@@ -1,8 +1,8 @@
-package com.torii_gate
+package org.torii_gate
 
 import com.devsisters.shardcake.{EntityType, Replier, Sharding}
 import dev.profunktor.redis4cats.RedisCommands
-import com.torii_gate.config.MatchConfig
+import org.torii_gate.config.MatchConfig
 import scala.util.{Failure, Success, Try}
 import zio.{Dequeue, RIO, Task, ZIO}
 import zio.config.*

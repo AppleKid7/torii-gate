@@ -15,17 +15,18 @@ val tapirVersion = "1.2.6"
 val sttpVersion = "3.8.7"
 
 
-lazy val coreSettings = Seq(
-  organization := "com.torii-gate",
-  scalaVersion := scala3Version,
-  resourceDirectory in Compile := baseDirectory.value / "src" / "main" / "resources",
-)
+lazy val core = project
+  .in(file("."))
+  .settings(
+    organization := "org.torii-gate",
+    scalaVersion := scala3Version,
+    Compile / resourceDirectory := baseDirectory.value / "src" / "main" / "resources",
+  )
 
 
 lazy val manager = project
   .in(file("manager"))
   .settings(
-    coreSettings,
     name := "Torii Gate",
     organization := "com.torii-gate",
     version := "0.1.0-SNAPSHOT",
@@ -51,7 +52,6 @@ lazy val manager = project
 lazy val matches = project
   .in(file("matches"))
   .settings(
-    coreSettings,
     name := "Torii Gate",
     organization := "com.torii-gate",
     version := "0.1.0-SNAPSHOT",
@@ -86,7 +86,6 @@ lazy val matches = project
 lazy val config = project
   .in(file("config"))
   .settings(
-    coreSettings,
     name := "Torii Gate",
     organization := "com.torii-gate",
     version := "0.1.0-SNAPSHOT",
@@ -111,4 +110,4 @@ lazy val config = project
       "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
       "com.devsisters" %% "shardcake-storage-redis" % shardCakeVersion,
     )
-  )
+  ).dependsOn(core)

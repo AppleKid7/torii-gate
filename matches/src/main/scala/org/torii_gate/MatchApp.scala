@@ -1,11 +1,11 @@
-package com.torii_gate
+package org.torii_gate
 
 import com.devsisters.shardcake
 import com.devsisters.shardcake.*
 import com.devsisters.shardcake.interfaces.*
-import com.torii_gate.MatchBehavior.*
-import com.torii_gate.MatchBehavior.MatchMessage.*
-import com.torii_gate.config.*
+import org.torii_gate.MatchBehavior.*
+import org.torii_gate.MatchBehavior.MatchMessage.*
+import org.torii_gate.config.*
 import dev.profunktor.redis4cats.RedisCommands
 import io.getquill.*
 import io.getquill.jdbczio.Quill

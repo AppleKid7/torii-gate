@@ -1,4 +1,4 @@
-package com.torii_gate
+package org.torii_gate
 
 import java.util.UUID
 import zio.json.*

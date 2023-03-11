@@ -1,7 +1,7 @@
-package com
+package org
 
 import com.devsisters.shardcake.StorageRedis.Redis
-import com.torii_gate.config.RedisUriConfig
+import org.torii_gate.config.RedisUriConfig
 import dev.profunktor.redis4cats.Redis
 import dev.profunktor.redis4cats.connection.RedisClient
 import dev.profunktor.redis4cats.data.RedisCodec
