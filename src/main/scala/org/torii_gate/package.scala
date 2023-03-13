@@ -1,4 +1,4 @@
-package com
+package org
 
 import com.devsisters.shardcake.StorageRedis.Redis
 import dev.profunktor.redis4cats.Redis
@@ -6,7 +6,7 @@ import dev.profunktor.redis4cats.connection.RedisClient
 import dev.profunktor.redis4cats.data.RedisCodec
 import dev.profunktor.redis4cats.effect.Log
 import dev.profunktor.redis4cats.pubsub.PubSub
-import com.torii_gate.config.RedisUriConfig
+import org.torii_gate.config.RedisUriConfig
 import zio.{Task, ZEnvironment, ZIO, ZLayer}
 import zio.config.*
 import zio.interop.catz.*

@@ -1,4 +1,4 @@
-package com.torii_gate.config
+package org.torii_gate.config
 
 import zio.*
 import zio.config.*

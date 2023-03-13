@@ -1,10 +1,10 @@
-package com.torii_gate
+package org.torii_gate
 
 import com.devsisters.shardcake.{EntityType, Replier, Sharding}
 import dev.profunktor.redis4cats.RedisCommands
-import com.torii_gate.config.MatchConfig
+import org.torii_gate.config.MatchConfig
 import scala.util.{Failure, Success, Try}
-import zio.{Dequeue, RIO, Task, ZIO}
+import zio.{Dequeue, Random, RIO, Task, ZIO}
 import zio.config.*
 
 object MatchBehavior {
@@ -20,6 +20,8 @@ object MatchBehavior {
   enum MatchMessage {
     case Join(userId: String, replier: Replier[Either[MatchMakingError, Set[String]]])
     case Leave(userId: String, replier: Replier[Either[MatchMakingError, String]])
+    case ListUsers(replier: Replier[Either[MatchMakingError, Set[UserId]]])
+    case ListSessions(replier: Replier[Either[MatchMakingError, Set[SessionId]]])
   }
 
   case class MatchResponse(status: Int, message: Option[String])
@@ -75,10 +77,29 @@ object MatchBehavior {
                 )
               else
                 (redis.lRem(entityId, 1, userId) *>
-                  replier.reply(Right(s"$userId has left the match!")))
+                  (
+                    for {
+                      members <- redis.lRange(entityId, 0, -1).map(_.toSet)
+                      _ <- redis.del(entityId).unless(members.nonEmpty)
+                    } yield ()
+                  ) *> replier.reply(Right(s"$userId has left the match!")))
                   .unless(!members.contains(userId))
                   .unit
             )
+        case MatchMessage.ListUsers(replier) =>
+          redis
+            .lRange(entityId, 0, -1)
+            .map(_.toSet)
+            .flatMap(members =>
+              replier.reply(
+                Right(members.map(UserId(_)))
+              )
+            )
+        case MatchMessage.ListSessions(replier) =>
+          redis
+            .keys("match:*")
+            .map(_.toSet)
+            .flatMap(sessions => replier.reply(Right(sessions.map(SessionId(_)))))
       }
     }
 }

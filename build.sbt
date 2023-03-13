@@ -11,8 +11,6 @@ val shardCakeVersion = "2.0.6"
 val zioJsonVersion = "0.4.2"
 val quillVersion = "4.6.0"
 val zioConfigVersion = "3.0.7"
-val tapirVersion = "1.2.6"
-val sttpVersion = "3.8.7"
 
 lazy val root = project
   .in(file("."))
