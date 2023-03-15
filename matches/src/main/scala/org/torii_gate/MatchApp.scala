@@ -87,16 +87,21 @@ object MatchApp extends ZIOAppDefault {
         badRequestOnPathInvalidIfPathShapeMatches = true
       )
     )
-  val joinEndpointOptions: ZioHttpServerOptions[Sharding] = ZioHttpServerOptions
-    .customiseInterceptors[Sharding]
-    .decodeFailureHandler(myDecodeFailureHandler)
-    .options
+  // val joinEndpointOptions: ZioHttpServerOptions[Sharding] = ZioHttpServerOptions
+  //   .customiseInterceptors[Sharding]
+  //   .decodeFailureHandler(myDecodeFailureHandler)
+  //   .options
 
-  val swaggerEndpoints: List[ZServerEndpoint[Sharding, Any]] = SwaggerInterpreter().fromServerEndpoints(List(joinServerEndpoint), "Matches", "1.0")
+  // val swaggerEndpoints: List[ZServerEndpoint[Sharding, Any]] = SwaggerInterpreter().fromServerEndpoints(List(joinServerEndpoint), "Matches", "1.0")
   // val docs = List(joinEndpoint).toOpenAPI("Matches", "1.0")
-  //  val swaggerUIRoute: List[ServerEndpoint[Sharding, Future]] = SwaggerUI[Future](docsAsYaml)
+  // val swaggerUIRoute: List[ServerEndpoint[Sharding, Future]] = SwaggerUI[Future](docsAsYaml)
   // val routes = ZioHttpInterpreter().toHttp[Sharding](List(joinServerEndpoint) ++ swaggerUIRoute)
-  val routes = ZioHttpInterpreter().toHttp[Sharding](List(joinServerEndpoint) ++ swaggerEndpoints)
+  // val routes = ZioHttpInterpreter().toHttp[Sharding](List(joinServerEndpoint) ++ swaggerEndpoints)
+
+  val docsAsYaml: String = OpenAPIDocsInterpreter().toOpenAPI(myEndpoints, "My App", "1.0").toYaml
+  // endpoint: /docs/swagger.json
+  val swaggerUIRoute = ZioHttpInterpreter().toRoute(SwaggerUI[Future](docsAsYaml))
+  val routes = ZioHttpInterpreter().toHttp[Sharding](List(joinServerEndpoint) ++ swaggerUIRoute)
 
   private val server: URIO[Sharding & http.Server, Nothing] =
     zio
