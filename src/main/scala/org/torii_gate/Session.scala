@@ -33,15 +33,16 @@ object Session {
 }
 
 case class SessionLive(
+    matchShard: com.devsisters.shardcake.Messenger[MatchMessage]
 ) extends Session {
   override def createSession() =
     for {
       uuid <- Random.nextUUID
     } yield SessionId(SessionLive.matchId(uuid.toString))
+
   override def joinSession(sessionId: SessionId) =
     for {
       uuid <- Random.nextUUID
-      matchShard <- Sharding.messenger(MatchBehavior.Match)
       res <- matchShard
         .send[Either[MatchMakingError, Set[String]]](sessionId.id)(
           MatchMessage.Join(SessionLive.userId(uuid.toString), _)
@@ -49,9 +50,9 @@ case class SessionLive(
         .orDie
       value <- ZIO.fromEither(res)
     } yield value
+
   override def leaveSession(sessionId: SessionId, userId: UserId) =
     for {
-      matchShard <- Sharding.messenger(MatchBehavior.Match)
       res <- matchShard
         .send[Either[MatchMakingError, String]](sessionId.id)(
           MatchMessage.Leave(userId.id, _)
@@ -59,9 +60,9 @@ case class SessionLive(
         .mapError(e => MatchMakingError.ShardcakeConnectionError(e.getMessage()))
       value <- ZIO.fromEither(res)
     } yield value
+
   override def getAllUsers(sessionId: SessionId) =
     for {
-      matchShard <- Sharding.messenger(MatchBehavior.Match)
       res <- matchShard
         .send[Either[MatchMakingError, Set[UserId]]](sessionId.id)(
           MatchMessage.ListUsers(_)
@@ -69,6 +70,7 @@ case class SessionLive(
         .mapError(e => MatchMakingError.ShardcakeConnectionError(e.getMessage()))
       value <- ZIO.fromEither(res)
     } yield value
+
   override def getAllSessions =
     for {
       matchShard <- Sharding.messenger(MatchBehavior.Match)
@@ -82,8 +84,11 @@ case class SessionLive(
 }
 
 object SessionLive {
-  val layer: ZLayer[Sharding, MatchMakingError, Session] =
-    ZLayer.succeed(SessionLive())
+  val layer: ZLayer[Sharding, MatchMakingError, Session] = ZLayer.scoped {
+    for {
+      matchShard <- Sharding.messenger[MatchMessage](MatchBehavior.Match)
+    } yield SessionLive(matchShard)
+  }
 
   def matchId(id: String): String =
     s"match:$id"
