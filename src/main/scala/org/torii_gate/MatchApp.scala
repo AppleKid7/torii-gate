@@ -48,7 +48,6 @@ object MatchApp extends ZIOAppDefault {
             .setStatus(Status.Ok)
         }
       case req @ (Method.CUSTOM("LEAVE") -> !! / "sessions" / sessionId) =>
-        import zio.Console._
         for {
           either <- req
             .bodyAsString

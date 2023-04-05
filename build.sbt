@@ -11,6 +11,7 @@ val shardCakeVersion = "2.0.6"
 val zioJsonVersion = "0.4.2"
 val quillVersion = "4.6.0"
 val zioConfigVersion = "3.0.7"
+val testContainersVersion = "0.40.9"
 
 lazy val root = project
   .in(file("."))
@@ -24,13 +25,17 @@ lazy val root = project
       "-Xmax-inlines",
       "64"
     ),
+    Test / unmanagedClasspath += baseDirectory.value / "resources",
+    Test / fork := true,
+    Test / javaOptions += "--add-opens=java.base/java.util=ALL-UNNAMED",
 
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
       "ch.qos.logback" % "logback-classic" % logbackVersion % Runtime,
       "dev.zio" %% "zio" % zioVersion,
-      "dev.zio" %% "zio-test" % zioVersion,
-      "dev.zio" %% "zio-test-sbt" % zioVersion,
+      "dev.zio" %% "zio-test" % zioVersion % Test,
+      "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+      "com.dimafeng" %% "testcontainers-scala-core" % testContainersVersion % Test,
       "dev.zio" %% "zio-streams" % zioVersion,
       "dev.zio" %% "zio-test-junit" % zioVersion,
       "dev.zio" %% "zio-http" % zioHttpVersion,
