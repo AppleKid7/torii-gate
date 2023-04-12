@@ -8,10 +8,10 @@ import zio.*
 
 trait Session {
   def createSession(): IO[MatchMakingError, SessionId]
-  def joinSession(sessionId: SessionId): ZIO[Sharding, MatchMakingError, Set[String]]
-  def leaveSession(sessionId: SessionId, userId: UserId): ZIO[Sharding, MatchMakingError, String]
-  def getAllUsers(sessionId: SessionId): ZIO[Sharding, MatchMakingError, Set[UserId]]
-  def getAllSessions: ZIO[Sharding, MatchMakingError, Set[SessionId]]
+  def joinSession(sessionId: SessionId): ZIO[Any, MatchMakingError, Set[String]]
+  def leaveSession(sessionId: SessionId, userId: UserId): ZIO[Any, MatchMakingError, String]
+  def getAllUsers(sessionId: SessionId): ZIO[Any, MatchMakingError, Set[UserId]]
+  def getAllSessions: ZIO[Any, MatchMakingError, Set[SessionId]]
 }
 
 object Session {
@@ -33,8 +33,9 @@ object Session {
 }
 
 case class SessionLive(
-    matchShard: com.devsisters.shardcake.Messenger[MatchMessage]
+    sharding: com.devsisters.shardcake.Sharding
 ) extends Session {
+  val matchShard = sharding.messenger[MatchMessage](MatchBehavior.Match)
   override def createSession() =
     for {
       uuid <- Random.nextUUID
@@ -73,7 +74,6 @@ case class SessionLive(
 
   override def getAllSessions =
     for {
-      matchShard <- Sharding.messenger(MatchBehavior.Match)
       res <- matchShard
         .send[Either[MatchMakingError, Set[SessionId]]]("")(
           MatchMessage.ListSessions(_)
@@ -86,8 +86,8 @@ case class SessionLive(
 object SessionLive {
   val layer: ZLayer[Sharding, MatchMakingError, Session] = ZLayer.scoped {
     for {
-      matchShard <- Sharding.messenger[MatchMessage](MatchBehavior.Match)
-    } yield SessionLive(matchShard)
+      sharding <- ZIO.service[Sharding]
+    } yield SessionLive(sharding)
   }
 
   def matchId(id: String): String =
