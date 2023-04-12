@@ -8,14 +8,14 @@ import zio.*
 
 trait Session {
   def createSession(): IO[MatchMakingError, SessionId]
-  def joinSession(sessionId: SessionId): ZIO[Any, MatchMakingError, Set[String]]
-  def leaveSession(sessionId: SessionId, userId: UserId): ZIO[Any, MatchMakingError, String]
-  def getAllUsers(sessionId: SessionId): ZIO[Any, MatchMakingError, Set[UserId]]
-  def getAllSessions: ZIO[Any, MatchMakingError, Set[SessionId]]
+  def joinSession(sessionId: SessionId): IO[MatchMakingError, Set[String]]
+  def leaveSession(sessionId: SessionId, userId: UserId): IO[MatchMakingError, String]
+  def getAllUsers(sessionId: SessionId): IO[MatchMakingError, Set[UserId]]
+  def getAllSessions: IO[MatchMakingError, Set[SessionId]]
 }
 
 object Session {
-  val live: ZLayer[Sharding, MatchMakingError, Session] = SessionLive.layer
+  val live = SessionLive.layer
 
   def createSession() = ZIO.environmentWithZIO[Session](_.get.createSession())
 
