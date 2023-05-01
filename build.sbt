@@ -23,7 +23,18 @@ lazy val root = project
     scalaVersion := scala3Version,
     scalacOptions ++= Seq(
       "-Xmax-inlines",
-      "64"
+      "64",
+      "-deprecation",
+      "-encoding",
+      "UTF-8",
+      "-feature",
+      "-language:higherKinds",
+      "-language:existentials",
+      "-unchecked",
+      "-Xfatal-warnings",
+      "-language:postfixOps",
+      "-explain-types",
+      "-Ykind-projector"
     ),
     Test / unmanagedClasspath += baseDirectory.value / "resources",
     Test / fork := true,

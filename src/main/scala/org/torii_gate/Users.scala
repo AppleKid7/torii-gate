@@ -3,7 +3,7 @@ package org.torii_gate
 import java.util.UUID
 import zio.json.*
 
-case class User(id: UUID, name: String)
+case class User(id: UserId, name: String)
 
 object User {
   given JsonEncoder[User] =

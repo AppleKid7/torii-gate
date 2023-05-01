@@ -15,7 +15,7 @@ trait Session {
 }
 
 object Session {
-  val live = SessionLive.layer
+  val live: ZLayer[Sharding, MatchMakingError, Session] = SessionLive.layer
 
   def createSession() = ZIO.environmentWithZIO[Session](_.get.createSession())
 

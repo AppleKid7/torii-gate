@@ -21,8 +21,77 @@ import zio.interop.catz.*
 import zio.test.*
 import zio.test.Assertion.*
 import zio.test.TestAspect.{sequential, withLiveClock}
+import scala.reflect.runtime.universe.*
+import com.devsisters.shardcake.interfaces.Serialization
+import com.twitter.chill.{ KryoInstantiator, KryoPool, ScalaKryoInstantiator }
+import scala.collection.immutable
+import zio.prelude.ParSeq
 
 object MatchEndToEndSpec extends ZIOSpecDefault {
+  
+  object TestKryoSerialization {
+    val live: ZLayer[Any, Throwable, Serialization] =
+      ZLayer {
+        ZIO.attempt {
+          def kryoInstantiator: KryoInstantiator = (new ScalaKryoInstantiator).setRegistrationRequired(false)
+          def poolSize: Int                      = 4 * java.lang.Runtime.getRuntime.availableProcessors
+          KryoPool.withByteArrayOutputStream(poolSize, kryoInstantiator)
+        }.map(kryoPool =>
+          new Serialization {
+            def encode(message: Any): Task[Array[Byte]] = ZIO.attempt(kryoPool.toBytesWithClass(message))
+            def decode[A](bytes: Array[Byte]): Task[A]  = ZIO.attempt(kryoPool.fromBytes(bytes).asInstanceOf[A])
+          }
+        )
+      }
+  }
+
+  // object TestScodecSerialization {
+  //   val live: ZLayer[Any, Throwable, Serialization] =
+  //     ZLayer {
+  //       ZIO.attempt {
+  //         val anyCodec: Codec[Any] = new Codec[Any] {
+  //           def encode(any: Any): Attempt[BitVector] = any match {
+  //             case i: Int => int32.encode(i)
+  //             case l: Long => int64.encode(l)
+  //             case s: String => utf8_32.encode(s)
+  //             case _ => Attempt.failure(Err("Unsupported type"))
+  //           }
+
+  //           def decode(bits: BitVector): Attempt[DecodeResult[Any]] = {
+  //             int32.decode(bits).flatMap { iResult =>
+  //               val i = iResult.value
+  //               if (i == 0) Attempt.successful(DecodeResult(null, iResult.remainder))
+  //               else if (i > 0) {
+  //                 utf8_32.decode(iResult.remainder).map { sResult =>
+  //                   DecodeResult(sResult.value, sResult.remainder)
+  //                 }
+  //               } else {
+  //                 int64.decode(iResult.remainder).map { lResult =>
+  //                   DecodeResult(lResult.value, lResult.remainder)
+  //                 }
+  //               }
+  //             }
+  //           }
+
+  //           def sizeBound = SizeBound.unknown
+  //         }
+  //         anyCodec
+  //       }.map(anyCodec =>
+  //         new Serialization{
+  //           def encode(message: Any): Task[Array[Byte]] = ZIO.attempt {
+  //             val encoded: Attempt[BitVector] = anyCodec.encode(message)
+  //             encoded.getOrElse(BitVector.empty).toByteArray
+  //           }
+  //           def decode[A](bytes: Array[Byte]): Task[A] = ZIO.attempt {
+  //             val bits = BitVector(bytes)
+  //             // val decoded: Attempt[DecodeResult[A]] = anyCodec.decode(bits).map(result => result.map(_.asInstanceOf[A]))
+  //             val decoded = anyCodec.decode(bits)
+  //             decoded.getOrElse(throw new java.lang.Exception("Failed to decode bytes")).value.asInstanceOf[A]
+  //           }
+  //         }
+  //       )
+  //     }
+  // }
 
   val shardManagerServer: ZLayer[ShardManager with ManagerConfig, Throwable, Unit] =
     ZLayer(Server.run.forkDaemon *> ClockLive.sleep(3.seconds).unit)
@@ -74,7 +143,7 @@ object MatchEndToEndSpec extends ZIOSpecDefault {
   private val managerConfig = ZLayer.succeed(ManagerConfig.default.copy(apiPort = 8087))
   private val redisConfig = ZLayer.succeed(RedisConfig.default)
 
-  def spec: Spec[TestEnvironment with Scope, Any] =
+  def spec: Spec[TestEnvironment with zio.Scope, Any] =
     suite("MatchBehavior end to end test")(
       test("Send message to entities") {
         ZIO.scoped {
@@ -98,7 +167,7 @@ object MatchEndToEndSpec extends ZIOSpecDefault {
       }
     ).provideShared(
       Sharding.live,
-      KryoSerialization.live,
+      TestKryoSerialization.live,
       GrpcPods.live,
       ShardManagerClient.liveWithSttp,
       StorageRedis.live,
