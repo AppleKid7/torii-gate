@@ -29,29 +29,6 @@ import zio.test.TestAspect.{sequential, withLiveClock}
 
 object MatchEndToEndSpec extends ZIOSpecDefault {
 
-  object TestCustomSerialization {
-    val live: ZLayer[Any, Throwable, Serialization] =
-      ZLayer {
-        ZIO.attempt {
-          new Serialization {
-            def encode(message: Any): Task[Array[Byte]] = ZIO.attempt {
-              val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
-              val outputStream = new ObjectOutputStream(stream)
-              outputStream.writeObject(message)
-              outputStream.close()
-              stream.toByteArray
-            }
-            def decode[A](bytes: Array[Byte]): Task[A] = ZIO.attempt {
-              val inputStream = new ObjectInputStream(new ByteArrayInputStream(bytes))
-              val value = inputStream.readObject
-              inputStream.close()
-              value.asInstanceOf[A]
-            }
-          }
-        }
-      }
-  }
-
   val shardManagerServer: ZLayer[ShardManager with ManagerConfig, Throwable, Unit] =
     ZLayer(Server.run.forkDaemon *> ClockLive.sleep(3.seconds).unit)
 
@@ -126,7 +103,7 @@ object MatchEndToEndSpec extends ZIOSpecDefault {
       }
     ).provideShared(
       Sharding.live,
-      TestCustomSerialization.live,
+      Serialization.javaSerialization,
       GrpcPods.live,
       ShardManagerClient.liveWithSttp,
       StorageRedis.live,
