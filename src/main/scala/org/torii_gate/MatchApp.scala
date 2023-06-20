@@ -1,4 +1,4 @@
-package com.torii_gate
+package org.torii_gate
 
 import com.devsisters.shardcake
 import com.devsisters.shardcake.*
@@ -7,9 +7,9 @@ import dev.profunktor.redis4cats.RedisCommands
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import java.util.UUID.randomUUID
-import com.torii_gate.MatchBehavior.*
-import com.torii_gate.MatchBehavior.MatchMessage.*
-import com.torii_gate.config.*
+import org.torii_gate.MatchBehavior.*
+import org.torii_gate.MatchBehavior.MatchMessage.*
+import org.torii_gate.config.*
 import scala.util.{Failure, Success, Try}
 import zhttp.http.*
 import zhttp.service
@@ -22,55 +22,55 @@ import zio.config.*
 import zio.json.*
 
 object MatchApp extends ZIOAppDefault {
-  // val config: ZLayer[Any, SecurityException, shardcake.Config] =
-  //   ZLayer(
-  //     System
-  //       .env("port")
-  //       .map(
-  //         _.flatMap(_.toIntOption).fold(shardcake.Config.default)(port =>
-  //           shardcake.Config.default.copy(shardingPort = port)
-  //         )
-  //       )
-  //   )
   val config: ZLayer[ShardcakeConfig, SecurityException, shardcake.Config] =
     ZLayer(getConfig[ShardcakeConfig].map { config =>
       shardcake.Config.default.copy(shardingPort = config.port)
     })
 
-  val app: Http[Scope & Sharding, MatchMakingError, Request, Response] = Http.collectZIO[Request] {
-    case Method.GET -> !! / "text" =>
-      ZIO.unit.map(_ => Response.text("Hello World!"))
-    case Method.POST -> !! / "join" =>
-      (for {
-        matchShard <- Sharding.messenger(MatchBehavior.Match)
-        res <- matchShard
-          .send[Either[MatchMakingError, Set[String]]](s"match1")(Join(s"user-${randomUUID()}", _))
-          .orDie
-        value <- ZIO.fromEither(res)
-      } yield Response.json(UserJoinResponse(value.toList).toJson).setStatus(Status.Ok))
-    case req @ (Method.POST -> !! / "leave") =>
-      for {
-        either <- req
-          .bodyAsString
-          .mapError(e => MatchMakingError.NetworkReadError(e.getMessage()))
-          .map(_.fromJson[UserLeave])
-        data <- ZIO.fromEither(either).mapError(e => MatchMakingError.InvalidJson(e))
-        matchShard <- Sharding.messenger(MatchBehavior.Match)
-        res <- matchShard
-          .send[Either[MatchMakingError, String]](s"match1")(
-            Leave(s"user-${data.id}", _)
-          )
-          .mapError(e => MatchMakingError.ShardcakeConnectionError(e.getMessage()))
-        value <- ZIO.fromEither(res)
-      } yield Response.json(s"""{"success": "$value"}""").setStatus(Status.Ok)
-  }
+  val app: Http[Scope & Sharding & Session, MatchMakingError, Request, Response] =
+    Http.collectZIO[Request] {
+      case Method.GET -> !! / "text" =>
+        ZIO.unit.map(_ => Response.text("Hello World!"))
+      case Method.GET -> !! / "sessions" =>
+        Session.getAllSessions map { sessionIds =>
+          Response
+            .json(SessionListResponse(sessionIds.iterator.map(_.id).toList).toJson)
+            .setStatus(Status.Ok)
+        }
+      case Method.POST -> !! / "sessions" =>
+        Session.createSession() map { sessionId =>
+          Response.json(CreateSessionResponse(sessionId).toJson).setStatus(Status.Ok)
+        }
+      case req @ (Method.CUSTOM("JOIN") -> !! / "sessions" / sessionId) =>
+        Session.joinSession(SessionId(sessionId)) map { _ =>
+          Response
+            .json(JoinSessionResponse(SessionId(sessionId), "Joined succesfully!").toJson)
+            .setStatus(Status.Ok)
+        }
+      case req @ (Method.CUSTOM("LEAVE") -> !! / "sessions" / sessionId) =>
+        for {
+          either <- req
+            .bodyAsString
+            .mapError(e => MatchMakingError.NetworkReadError(e.getMessage()))
+            .map(_.fromJson[UserId])
+          data <- ZIO.fromEither(either).mapError(e => MatchMakingError.InvalidJson(e))
+          userId = UserId(data.id)
+          res <- Session.leaveSession(SessionId(sessionId), userId)
+        } yield Response.json(LeaveSessionResponse(res).toJson).setStatus(Status.Ok)
+      case req @ (Method.GET -> !! / "sessions" / sessionId / "users") =>
+        for {
+          ids <- Session.getAllUsers(SessionId(sessionId))
+        } yield Response
+          .json(UserListResponse(ids.iterator.map(_.id).toList).toJson)
+          .setStatus(Status.Ok)
+    }
 
   private val server =
     Server.paranoidLeakDetection ++ // Paranoid leak detection (affects performance)
       Server.app(
         app.catchAll(ex =>
           Http.succeed(
-            Response.json(s"""{"failure": "${ex.message}"}""").setStatus(Status.BadRequest)
+            Response.json(FailedResponse(ex.message).toJson).setStatus(Status.BadRequest)
           )
         )
       ) // Setup the Http app
@@ -113,7 +113,8 @@ object MatchApp extends ZIOAppDefault {
           GrpcPods.live,
           Sharding.live,
           GrpcShardingService.live,
-          MatchConfig.live
+          MatchConfig.live,
+          Session.live
         )
       }
       .provide(AppConfig.live)

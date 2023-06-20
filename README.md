@@ -1,3 +1,7 @@
+## Torii Gate
+
+A basic multiplayer game server written in Scala, powered by [zio-http](https://github.com/zio/zio-http) used for the HTTP API and [shardcake](https://github.com/devsisters/shardcake) for entity sharding.
+
 ## sbt project compiled with Scala 3
 
 ### Usage

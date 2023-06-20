@@ -1,8 +1,8 @@
-package com.torii_gate
+package org.torii_gate
 
 import com.devsisters.shardcake.*
 import com.devsisters.shardcake.interfaces.*
-import com.torii_gate.config.*
+import org.torii_gate.config.*
 import zio.*
 
 
