@@ -2,6 +2,8 @@ package org.torii_gate
 
 import java.util.UUID
 import zio.json.*
+import zio.jdbc.JdbcDecoder
+import zio.schema.*
 
 case class User(id: UserId, name: String)
 
@@ -11,6 +13,12 @@ object User {
 
   given JsonDecoder[User] =
     DeriveJsonDecoder.gen[User]
+
+  val schema: Schema[User] =
+    DeriveSchema.gen[User]
+
+  given JdbcDecoder[User] =
+    JdbcDecoder.fromSchema(schema)
 }
 
 case class UserLeave(id: String)

@@ -9,8 +9,9 @@ val zioVersion = "2.0.6"
 val zioHttpVersion = "0.0.4"
 val shardCakeVersion = "2.0.6"
 val zioJsonVersion = "0.4.2"
-val quillVersion = "4.6.0"
 val zioConfigVersion = "3.0.7"
+val zioJdbcVersion = "0.0.2"
+val zioSchemaVersion = "0.4.11"
 val testContainersVersion = "0.40.9"
 
 lazy val root = project
@@ -39,6 +40,8 @@ lazy val root = project
     Test / unmanagedClasspath += baseDirectory.value / "resources",
     Test / fork := true,
     Test / javaOptions += "--add-opens=java.base/java.util=ALL-UNNAMED",
+    Test / javaOptions += "--add-opens=java.base/java.lang=ALL-UNNAMED",
+    Test / javaOptions += "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
 
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-generic" % circeVersion,
@@ -54,13 +57,15 @@ lazy val root = project
       "dev.zio" %% "zio-config" % zioConfigVersion,
       "dev.zio" %% "zio-config-typesafe" % zioConfigVersion,
       "dev.zio" %% "zio-config-magnolia" % zioConfigVersion,
-      "io.getquill" %% "quill-jdbc-zio" % quillVersion,
       "org.postgresql" % "postgresql" % "42.3.1",
       "com.devsisters" % "shardcake-core_3" % shardCakeVersion,
       "com.devsisters" %% "shardcake-manager" % shardCakeVersion,
       "com.devsisters" %% "shardcake-storage-redis" % shardCakeVersion,
       "com.devsisters" %% "shardcake-protocol-grpc" % shardCakeVersion,
       "com.devsisters" %% "shardcake-serialization-kryo" % shardCakeVersion,
+      "dev.zio" %% "zio-jdbc" % zioJdbcVersion,
+      "dev.zio" %% "zio-schema" % zioSchemaVersion,
+      "dev.zio" %% "zio-schema-derivation" % zioSchemaVersion,
       "org.scalameta" %% "munit" % "0.7.29" % Test,
     )
   )

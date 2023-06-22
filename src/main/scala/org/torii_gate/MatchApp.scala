@@ -4,8 +4,6 @@ import com.devsisters.shardcake
 import com.devsisters.shardcake.*
 import com.devsisters.shardcake.interfaces.*
 import dev.profunktor.redis4cats.RedisCommands
-import io.getquill.*
-import io.getquill.jdbczio.Quill
 import java.util.UUID.randomUUID
 import org.torii_gate.MatchBehavior.*
 import org.torii_gate.MatchBehavior.MatchMessage.*

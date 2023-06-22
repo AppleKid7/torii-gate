@@ -16,13 +16,10 @@ import org.torii_gate.MatchBehavior.Match
 import org.torii_gate.MatchBehavior.MatchMakingError
 import org.torii_gate.MatchBehavior.MatchMessage.Join
 import org.torii_gate.config.MatchConfig
-import scala.collection.immutable
-import scala.reflect.runtime.universe.*
 import sttp.client3.UriContext
 import zio.{Config => _, _}
 import zio.Clock.ClockLive
 import zio.interop.catz.*
-import zio.prelude.ParSeq
 import zio.test.*
 import zio.test.Assertion.*
 import zio.test.TestAspect.{sequential, withLiveClock}
@@ -103,7 +100,7 @@ object MatchEndToEndSpec extends ZIOSpecDefault {
       }
     ).provideShared(
       Sharding.live,
-      Serialization.javaSerialization,
+      KryoSerialization.live,
       GrpcPods.live,
       ShardManagerClient.liveWithSttp,
       StorageRedis.live,
